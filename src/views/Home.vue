@@ -1,42 +1,47 @@
 <template>
-  <el-container>
-    <el-form :model="form" label-width="120px">
-      <el-form-item label="BPM">
-        <el-input v-model.number="form.bpm" />
-      </el-form-item>
+  <el-container class="main-container">
+    <el-header>
+      <span class="title-text">2打叩くスクリプトを生成するツール</span>
+    </el-header>
+    <el-main>
+      <el-form :model="form" label-width="auto">
+        <el-form-item label="BPM">
+          <el-input v-model.number="form.bpm" />
+        </el-form-item>
 
-      <el-form-item label="1/n snap">
-        <el-input v-model.number="form.snap" type="number" :min="1" />
-      </el-form-item>
+        <el-form-item label="1/n snap">
+          <el-input v-model.number="form.snap" type="number" :min="1" />
+        </el-form-item>
 
-      <el-form-item label="遅延(ms)">
-        <el-col :span="11">
-          <el-input v-model.number="form.delay.min" type="number" />
-        </el-col>
-        <el-col :span="2" class="text-center">
-          <span class="text-gray-500"> ～ </span>
-        </el-col>
-        <el-col :span="11">
-          <el-input v-model.number="form.delay.max" type="number" />
-        </el-col>
-      </el-form-item>
+        <el-form-item label="２打目の遅延(ms)">
+          <el-input v-model.number="form.delay" type="number" />
+        </el-form-item>
 
-      <el-form-item label="キー１">
-        <el-select v-model="form.key1" placeholder="選択してください。">
-          <el-option v-for="(str, i) in alphabet" :key="i" :label="str" :value="i+4" />
-        </el-select>
-      </el-form-item>
+        <el-form-item label="１打目を離すまでの時間(ms)">
+          <el-input v-model.number="form.releaseTime1" type="number" />
+        </el-form-item>
 
-      <el-form-item label="キー２">
-        <el-select v-model="form.key2" placeholder="選択してください。">
-          <el-option v-for="(str, i) in alphabet" :key="i" :label="str" :value="i+4" />
-        </el-select>
-      </el-form-item>
+        <el-form-item label="２打目を離すまでの時間(ms)">
+          <el-input v-model.number="form.releaseTime2" type="number" />
+        </el-form-item>
 
-      <el-form-item>
-        <el-button type="primary" @click="onSubmit">作成</el-button>
-      </el-form-item>
-    </el-form>
+        <el-form-item label="キー１">
+          <el-select v-model="form.key1">
+            <el-option v-for="(str, i) in alphabet" :key="i" :label="str" :value="i+4" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="キー２">
+          <el-select v-model="form.key2">
+            <el-option v-for="(str, i) in alphabet" :key="i" :label="str" :value="i+4" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item>
+          <el-button type="primary" @click="onSubmit">作成</el-button>
+        </el-form-item>
+      </el-form>
+    </el-main>
   </el-container>
 </template>
 
@@ -54,10 +59,11 @@ export default {
         snap: 8,
 
         // 遅延
-        delay: {
-          min: 0,
-          max: 0,
-        },
+        delay: 0,
+
+        // 離すまでの時間
+        releaseTime1: 20,
+        releaseTime2: 20,
 
         // keys
         key1: 13, // J
@@ -69,8 +75,10 @@ export default {
     }
   },
   methods: {
+    goBack() {
+      this.$router.push('/')
+    },
     onSubmit() {
-      console.log(this.form)
       // json作成
       this.createJson()
       // ダウンロード
@@ -79,26 +87,24 @@ export default {
       this.script = []
     },
     createJson() {
-      // ミリ秒を計算 172＝＞44 8→32
+      // BPMとsnapから2打の間隔の時間を計算
       const snapTime = Math.round(60 * 1000 / this.form.bpm / this.form.snap)
-      // 離すまでの時間(ms)
-      const releaseTime = 20
-      // 遅延を決定
-      const secondPushTime = snapTime + Math.floor(Math.random() * ( this.form.delay.max + 1 - this.form.delay.min ) + this.form.delay.min) * [-1,1][Math.floor(Math.random() * 2)]
+      // 遅延を加味した2打目の時間
+      const secondPushTime = snapTime + this.form.delay
 
       // 1.key1を押す
       this.script.push({ "code": 17, "number": 0, "values": [this.form.key1, 0, 0, 0]})
       // 2.離すのを待つ
-      this.script.push({ "code": 6, "number": 1, "values": [releaseTime, 0, 0, 0]})
+      this.script.push({ "code": 6, "number": 1, "values": [this.form.releaseTime1, 0, 0, 0]})
       // 3.key1を離す
       this.script.push({ "code": 25, "number": 2, "values": [this.form.key1, 0, 0, 0]})
       // 4.key2を押すのを待つ
-      this.script.push({ "code": 6, "number": 3, "values": [secondPushTime - releaseTime, 0, 0, 0]})
+      this.script.push({ "code": 6, "number": 3, "values": [secondPushTime - this.form.releaseTime1, 0, 0, 0]})
 
       // 1.key2を押す
       this.script.push({ "code": 17, "number": 4, "values": [this.form.key2, 0, 0, 0]})
       // 2.離すのを待つ
-      this.script.push({ "code": 6, "number": 5, "values": [releaseTime, 0, 0, 0]})
+      this.script.push({ "code": 6, "number": 5, "values": [this.form.releaseTime2, 0, 0, 0]})
       // 3.key2を離す
       this.script.push({ "code": 25, "number": 6, "values": [this.form.key2, 0, 0, 0]})
 
@@ -121,3 +127,17 @@ export default {
   },
 }
 </script>
+
+<style scoped>
+.el-container{
+  border: solid 1px var(--el-border-color-base)
+}
+.el-header {
+  border-bottom: solid 1px var(--el-border-color-base);
+  display: flex;
+  align-items: center;
+}
+.title-text {
+  font-size: 20px;
+}
+</style>
