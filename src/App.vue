@@ -38,10 +38,6 @@ body {
   width: 50%;
 }
 
-.el-main  > .el-container {
-  background-color: #FFF;
-}
-
 .title-text {
   font-size: 40px;
   font-family: Oswald, sans-serif;
