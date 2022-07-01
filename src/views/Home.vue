@@ -6,22 +6,25 @@
   >
     <el-menu-item index="1">2打生成ツール</el-menu-item>
     <el-menu-item index="2">キー変換ツール</el-menu-item>
-    <el-menu-item index="3" disabled>1.5倍ツール(準備中)</el-menu-item>
+    <el-menu-item index="3">速度変換ツール</el-menu-item>
   </el-menu>
 
   <two-combo-tool v-if="selected === '1'" />
   <convert-keys-tool v-if="selected === '2'" />
+  <convert-speed-tool v-if="selected === '3'" />
 </template>
 
 <script>
-import TwoComboTool from "../components/TwoComboTool.vue";
-import ConvertKeysTool from "../components/ConvertKeysTool.vue";
+import TwoComboTool from "../components/TwoComboTool.vue"
+import ConvertKeysTool from "../components/ConvertKeysTool.vue"
+import ConvertSpeedTool from "../components/ConvertSpeedTool.vue"
 
 export default {
   name: "Home",
   components: {
     TwoComboTool,
     ConvertKeysTool,
+    ConvertSpeedTool,
   },
   data() {
     return {
