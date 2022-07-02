@@ -99,6 +99,11 @@ export default {
 
       // ファイル2 を結合
       this.script = this.script.concat(this.script_base2)
+
+      // numberの降り直し
+      for (let i = 0; i < this.script.length; i++) {
+        this.script[i].number = i
+      }
     },
     downloadFile() {
       // jsonダウンロード
