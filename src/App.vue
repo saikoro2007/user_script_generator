@@ -17,6 +17,7 @@ html {
 body {
   font-family: sans-serif;
   background-color: #F7F9FA;
+  overflow-y: scroll;
 }
 </style>
 
