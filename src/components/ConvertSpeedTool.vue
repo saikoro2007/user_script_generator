@@ -39,6 +39,7 @@ export default {
         ratio: 1.5,
       },
       script: [],
+      converted: [],
       errorMessage: '',
     }
   },
@@ -62,26 +63,60 @@ export default {
         this.downloadFile()
         // 初期化
         this.script = []
+        this.converted = []
       }
     },
     convertJson () {
+      let ms = 0
+      let remainder = 0
+      let number = 0
       for (let i=0; i < this.script.length; i++) {
         const row = this.script[i]
-        if (row.code === 5 || row.code === 6) {
-          row.values[0] = Math.round(row.values[0] * 1 / this.form.ratio)
+        switch (row.code) {
+          case 5:
+            // msに戻しておく
+            row.values[0] *= 256
+            /* falls through */
+          case 6: {
+            // 元のmsに倍率を付与してから足す
+            const shou = Math.floor(row.values[0] / this.form.ratio)
+            remainder += row.values[0] / this.form.ratio - shou
+            ms += shou
+            // 余りが1msに達した場合delayを追加
+            if (remainder >= 1) {
+              ms += 1
+              remainder -= 1
+            }
+            break
+          }
+          default:
+            // delayがある場合は追加
+            if (ms >= 1) {
+              if (Math.floor(ms / 255) >= 1) {
+                this.converted.push({"code": 5, "number": number++, "values": [Math.floor(ms/255), 0, 0, 0]})
+              }
+              if (ms % 255 >= 1) {
+                this.converted.push({"code": 6, "number": number++, "values": [ms % 255, 0, 0, 0]})
+              }
+              ms = 0
+            }
+
+            // press, releaseを追加
+            row.number = number++
+            this.converted.push(row)
+            break
         }
-        this.script[i] = row
       }
       return true
     },
     downloadFile() {
       // jsonダウンロード
-      const blob = new Blob([JSON.stringify(this.script, null, '  ')], {
+      const blob = new Blob([JSON.stringify(this.converted, null)], {
         type: 'application/json',
       });
       const link = document.createElement('a')
       link.href = URL.createObjectURL(blob)
-      link.download = 'exportData.json'
+      link.download = 'converted.json'
       link.click()
       link.remove()
     }
